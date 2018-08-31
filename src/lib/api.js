@@ -18,7 +18,16 @@ async function setPixel(x, y, color) {
   return r.json();
 }
 
+function subscribe(callback) {
+  const evtSource = new EventSource("/api/canvas/sub");
+  evtSource.onmessage = function(e) {
+    callback(JSON.parse(e.data));
+  };
+  return evtSource;
+}
+
 module.exports = {
   getCanvasData,
-  setPixel
+  setPixel,
+  subscribe
 };
