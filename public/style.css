@@ -1,0 +1,23 @@
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  background-color: #cccccc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#app {
+  border: 4px solid black;
+  width: 1040px;
+  height: auto;
+  margin: auto;
+}
+
+#app canvas {
+  display: block;
+  width: 100%;
+}
