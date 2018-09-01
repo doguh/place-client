@@ -159,8 +159,17 @@ class ZoomableCanvas {
     var dy = zeroPoint.y < 0 ? zeroPoint.y : 0;
     dx += farPoint.x > this.canvas.width ? farPoint.x - this.canvas.width : 0;
     dy += farPoint.y > this.canvas.height ? farPoint.y - this.canvas.height : 0;
+    const xfactor = farPoint.x / this.image.width;
+    const yfactor = farPoint.y / this.image.height;
+    const factor = Math.min(xfactor, yfactor);
+
+    if (this.image.width * factor < farPoint.x) {
+      this.context.translate((farPoint.x - this.image.width * factor) / 2, 0);
+    } else {
+      this.context.translate(0, (farPoint.y - this.image.height * factor) / 2);
+    }
+
     this.context.translate(dx, dy);
-    const factor = farPoint.x / this.image.width;
     this.context.scale(factor, factor);
     this.context.translate(-dx, -dy);
   }
