@@ -1,6 +1,8 @@
 const Api = require("./api");
 const getMousePos = require("../helpers/getCanvasMousePosition");
+const zoomableCanvas = require("../helpers/zoomableCanvas");
 
+let image;
 let canvasElement;
 let ctx;
 
@@ -11,18 +13,23 @@ async function init(parentElement) {
   COLORS = canvasData.colors;
   HEIGHT = canvasData.height;
   WIDTH = canvasData.width;
-  canvasElement = createCanvasElement(WIDTH, HEIGHT);
+  canvasElement = createCanvasElement();
+  image = createImage(canvasData.data);
   ctx = canvasElement.getContext("2d");
-  fillCanvasWithData(canvasData.data);
+  console.log(ctx);
   parentElement.appendChild(canvasElement);
+  window.addEventListener("resize", onResize);
   canvasElement.addEventListener("mousedown", onClickCanvas);
   Api.subscribe(updatePixel);
+  redraw();
+
+  zoomableCanvas(canvasElement, image.canvas);
 }
 
-function createCanvasElement(width, height) {
+function createCanvasElement() {
   const el = document.createElement("canvas");
-  el.setAttribute("width", width);
-  el.setAttribute("height", height);
+  el.width = window.innerWidth;
+  el.height = window.innerHeight;
   el.style.imageRendering = "optimizeSpeed";
   el.style.imageRendering = "-moz-crisp-edges";
   el.style.imageRendering = "-webkit-optimize-contrast";
@@ -32,25 +39,43 @@ function createCanvasElement(width, height) {
   return el;
 }
 
-function fillCanvasWithData(data) {
+function createImage(data) {
+  const el = document.createElement("canvas");
+  el.width = WIDTH;
+  el.height = HEIGHT;
+  const context = el.getContext("2d");
   const d = Buffer.from(data, "base64");
   for (let i = 0; i < d.length; i++) {
     const color = d[i];
     const x = i % WIDTH;
     const y = Math.floor(i / HEIGHT);
-    ctx.fillStyle = COLORS[color];
-    ctx.fillRect(x, y, 1, 1);
+    context.fillStyle = COLORS[color];
+    context.fillRect(x, y, 1, 1);
   }
+  return context;
 }
 
 function onClickCanvas(event) {
   const pos = getMousePos(canvasElement, event);
-  Api.setPixel(Math.floor(pos.x), Math.floor(pos.y), 1);
+  const pt = ctx.transformedPoint(pos.x, pos.y);
+  Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), 1);
+}
+
+function redraw() {
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(image.canvas, 0, 0);
+}
+
+function onResize(event) {
+  canvasElement.width = window.innerWidth;
+  canvasElement.height = window.innerHeight;
+  redraw();
 }
 
 function updatePixel({ x, y, color }) {
-  ctx.fillStyle = COLORS[color];
-  ctx.fillRect(x, y, 1, 1);
+  image.fillStyle = COLORS[color];
+  image.fillRect(x, y, 1, 1);
+  redraw();
 }
 
 module.exports = init;
