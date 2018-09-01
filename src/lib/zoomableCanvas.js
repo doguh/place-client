@@ -107,6 +107,9 @@ class ZoomableCanvas {
         currentScale = event.scale;
       }
     });
+    hammertime.on("pinchend", () => {
+      currentScale = 1;
+    });
     // very ugly hack so pinch and pan don't mess up together in chrome mobile
     hammertime.on("pinchstart", event => {
       hammertime.get("pan").set({ enable: false });
