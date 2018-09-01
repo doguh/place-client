@@ -1,4 +1,8 @@
+// ------------------------------------------------------------
 // CODE MOSTLY STOLEN FROM: http://phrogz.net/tmp/canvas_zoom_to_cursor.html
+// AND: https://codepen.io/joe-l-bright/pen/Kfczw?editors=0010
+// ------------------------------------------------------------
+const Hammer = require("hammerjs");
 
 /**
  * Creates a ZoomableCanvas
@@ -22,9 +26,14 @@ class ZoomableCanvas {
 
     trackTransforms(this.context);
     this.redraw();
+
     var lastX = canvas.width / 2,
       lastY = canvas.height / 2;
     var dragStart, dragged;
+
+    /**
+     * on mouse down / touch start
+     */
     canvas.addEventListener(
       "mousedown",
       evt => {
@@ -38,27 +47,27 @@ class ZoomableCanvas {
       false
     );
     canvas.addEventListener(
-      "mousemove",
+      "touchstart",
       evt => {
-        lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
-        lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
-        dragged = true;
-        if (dragStart) {
-          var pt = this.context.transformedPoint(lastX, lastY);
-          this.context.translate(pt.x - dragStart.x, pt.y - dragStart.y);
-          this.redraw();
-        }
+        document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
+          "none";
+        lastX =
+          evt.touches[0].offsetX || evt.touches[0].pageX - canvas.offsetLeft;
+        lastY =
+          evt.touches[0].offsetY || evt.touches[0].pageY - canvas.offsetTop;
+        dragStart = this.context.transformedPoint(lastX, lastY);
+        dragged = false;
       },
       false
     );
-    canvas.addEventListener(
-      "mouseup",
-      evt => {
-        dragStart = null;
-        if (!dragged && this._onClick) this._onClick(evt);
-      },
-      false
-    );
+
+    /**
+     * on mouse up / touch end
+     */
+    const touchEnd = evt => {
+      dragStart = null;
+      if (!dragged && this._onClick) this._onClick(evt);
+    };
     var scaleFactor = 1.1;
     var zoom = clicks => {
       var pt = this.context.transformedPoint(lastX, lastY);
@@ -68,6 +77,12 @@ class ZoomableCanvas {
       this.context.translate(-pt.x, -pt.y);
       this.redraw();
     };
+    canvas.addEventListener("mouseup", touchEnd, false);
+    canvas.addEventListener("touchend", touchEnd, false);
+
+    /**
+     * on mouse wheel
+     */
     var handleScroll = evt => {
       var delta = evt.wheelDelta
         ? evt.wheelDelta / 40
@@ -79,6 +94,37 @@ class ZoomableCanvas {
     };
     canvas.addEventListener("DOMMouseScroll", handleScroll, false);
     canvas.addEventListener("mousewheel", handleScroll, false);
+
+    var currentScale = 1;
+    const hammertime = new Hammer(canvas);
+
+    /**
+     * on drag
+     */
+    hammertime.get("pan").set({ enable: true });
+    hammertime.on("pan", event => {
+      lastX = event.center.x - canvas.offsetLeft;
+      lastY = event.center.y - canvas.offsetTop;
+      dragged = true;
+      var pt = this.context.transformedPoint(lastX, lastY);
+      this.context.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+      this.redraw();
+    });
+
+    /**
+     * on pinch zoom
+     */
+    hammertime.get("pinch").set({ enable: true });
+    hammertime.on("pinch", event => {
+      lastX = event.center.x - canvas.offsetLeft;
+      lastY = event.center.y - canvas.offsetTop;
+      var changeInScale = event.scale - currentScale;
+      if (changeInScale != 0) {
+        var pinchScaleFactor = 15;
+        zoom(changeInScale * pinchScaleFactor);
+        currentScale = event.scale;
+      }
+    });
   }
 
   /**
