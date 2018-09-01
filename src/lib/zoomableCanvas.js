@@ -25,6 +25,7 @@ class ZoomableCanvas {
     this.image = image;
 
     trackTransforms(this.context);
+    this.alignImage();
     this.redraw();
 
     var lastX = canvas.width / 2,
@@ -137,6 +138,7 @@ class ZoomableCanvas {
    */
   onResize() {
     trackTransforms(this.context);
+    this.alignImage();
   }
 
   /**
@@ -145,6 +147,22 @@ class ZoomableCanvas {
    */
   onClick(callback) {
     this._onClick = callback;
+  }
+
+  alignImage() {
+    var zeroPoint = this.context.transformedPoint(0, 0);
+    var farPoint = this.context.transformedPoint(
+      this.canvas.width,
+      this.canvas.height
+    );
+    var dx = zeroPoint.x < 0 ? zeroPoint.x : 0;
+    var dy = zeroPoint.y < 0 ? zeroPoint.y : 0;
+    dx += farPoint.x > this.canvas.width ? farPoint.x - this.canvas.width : 0;
+    dy += farPoint.y > this.canvas.height ? farPoint.y - this.canvas.height : 0;
+    this.context.translate(dx, dy);
+    const factor = farPoint.x / this.image.width;
+    this.context.scale(factor, factor);
+    this.context.translate(-dx, -dy);
   }
 }
 
