@@ -6,6 +6,7 @@
  * @param {CanvasImageSource} image CanvasImageSource instance that will be drawn into the canvas with drawImage
  */
 function ZoomableCanvas(canvas, image) {
+  var _self = this;
   var ctx = canvas.getContext("2d");
 
   function redraw() {
@@ -59,7 +60,7 @@ function ZoomableCanvas(canvas, image) {
     "mouseup",
     function(evt) {
       dragStart = null;
-      // if (!dragged) zoom(evt.shiftKey ? -1 : 1);
+      if (!dragged && _self._onClick) _self._onClick(evt);
     },
     false
   );
@@ -86,12 +87,29 @@ function ZoomableCanvas(canvas, image) {
   canvas.addEventListener("DOMMouseScroll", handleScroll, false);
   canvas.addEventListener("mousewheel", handleScroll, false);
 
+  /**
+   * canvas element
+   */
   this.canvas = canvas;
+  /**
+   * canvas 2d context
+   */
   this.context = ctx;
+  /**
+   * function that needs to be called when we want to redraw the canvas
+   */
   this.redraw = redraw;
+  /**
+   * function that needs to be called when the canvas is resized
+   */
   this.onResize = () => {
     trackTransforms(ctx);
   };
+  /**
+   * registers a callback function that will be called when the canvas is clicked
+   * @param {function} callback the function
+   */
+  this.onClick = callback => (this._onClick = callback);
 }
 
 function trackTransforms(ctx) {

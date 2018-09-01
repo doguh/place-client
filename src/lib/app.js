@@ -18,7 +18,7 @@ async function init(parentElement) {
   zoomableCanvas = createCanvasElement();
   parentElement.appendChild(zoomableCanvas.canvas);
   window.addEventListener("resize", onResize);
-  zoomableCanvas.canvas.addEventListener("mousedown", onClickCanvas);
+  zoomableCanvas.onClick(onClickCanvas);
   Api.subscribe(updatePixel);
   redraw();
 }
