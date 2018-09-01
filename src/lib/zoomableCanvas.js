@@ -97,9 +97,6 @@ class ZoomableCanvas {
      * on pinch zoom
      */
     hammertime.get("pinch").set({ enable: true });
-    hammertime.on("pinchstart", event => {
-      hammertime.get("pan").set({ enable: false });
-    });
     hammertime.on("pinch", event => {
       lastX = event.center.x - canvas.offsetLeft;
       lastY = event.center.y - canvas.offsetTop;
@@ -111,6 +108,9 @@ class ZoomableCanvas {
       }
     });
     // very ugly hack so pinch and pan don't mess up together in chrome mobile
+    hammertime.on("pinchstart", event => {
+      hammertime.get("pan").set({ enable: false });
+    });
     hammertime.on("pinchend", event => {
       setTimeout(() => hammertime.get("pan").set({ enable: true }), 100);
     });
