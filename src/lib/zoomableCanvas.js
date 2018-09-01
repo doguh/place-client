@@ -1,6 +1,11 @@
 // CODE MOSTLY STOLEN FROM: http://phrogz.net/tmp/canvas_zoom_to_cursor.html
 
-function makeZoomable(canvas, image) {
+/**
+ * Creates a ZoomableCanvas
+ * @param {HTMLCanvasElement} canvas canvas element
+ * @param {CanvasImageSource} image CanvasImageSource instance that will be drawn into the canvas with drawImage
+ */
+function ZoomableCanvas(canvas, image) {
   var ctx = canvas.getContext("2d");
 
   function redraw() {
@@ -80,6 +85,13 @@ function makeZoomable(canvas, image) {
   };
   canvas.addEventListener("DOMMouseScroll", handleScroll, false);
   canvas.addEventListener("mousewheel", handleScroll, false);
+
+  this.canvas = canvas;
+  this.context = ctx;
+  this.redraw = redraw;
+  this.onResize = () => {
+    trackTransforms(ctx);
+  };
 }
 
 function trackTransforms(ctx) {
@@ -146,6 +158,4 @@ function trackTransforms(ctx) {
   };
 }
 
-makeZoomable.trackTransforms = trackTransforms;
-
-module.exports = makeZoomable;
+module.exports = ZoomableCanvas;

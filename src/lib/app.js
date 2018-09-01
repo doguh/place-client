@@ -1,10 +1,9 @@
 const Api = require("./api");
 const getMousePos = require("../helpers/getCanvasMousePosition");
-const zoomableCanvas = require("../helpers/zoomableCanvas");
+const ZoomableCanvas = require("./zoomableCanvas");
 
 let image;
-let canvasElement;
-let ctx;
+let zoomableCanvas;
 
 let COLORS, WIDTH, HEIGHT;
 
@@ -13,17 +12,15 @@ async function init(parentElement) {
   COLORS = canvasData.colors;
   HEIGHT = canvasData.height;
   WIDTH = canvasData.width;
-  canvasElement = createCanvasElement();
+
   image = createImage(canvasData.data);
-  ctx = canvasElement.getContext("2d");
-  console.log(ctx);
-  parentElement.appendChild(canvasElement);
+
+  zoomableCanvas = createCanvasElement();
+  parentElement.appendChild(zoomableCanvas.canvas);
   window.addEventListener("resize", onResize);
-  canvasElement.addEventListener("mousedown", onClickCanvas);
+  zoomableCanvas.canvas.addEventListener("mousedown", onClickCanvas);
   Api.subscribe(updatePixel);
   redraw();
-
-  zoomableCanvas(canvasElement, image.canvas);
 }
 
 function createCanvasElement() {
@@ -36,7 +33,7 @@ function createCanvasElement() {
   el.style.imageRendering = "optimize-contrast";
   el.style.imageRendering = "pixelated";
   el.style.msInterpolationMode = "nearest-neighbor";
-  return el;
+  return new ZoomableCanvas(el, image.canvas);
 }
 
 function createImage(data) {
@@ -56,20 +53,20 @@ function createImage(data) {
 }
 
 function onClickCanvas(event) {
-  const pos = getMousePos(canvasElement, event);
-  const pt = ctx.transformedPoint(pos.x, pos.y);
+  const pos = getMousePos(zoomableCanvas.canvas, event);
+  const pt = zoomableCanvas.context.transformedPoint(pos.x, pos.y);
   Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), 1);
 }
 
 function redraw() {
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image.canvas, 0, 0);
+  zoomableCanvas.context.imageSmoothingEnabled = false;
+  zoomableCanvas.redraw();
 }
 
 function onResize(event) {
-  canvasElement.width = window.innerWidth;
-  canvasElement.height = window.innerHeight;
-  zoomableCanvas.trackTransforms(ctx);
+  zoomableCanvas.canvas.width = window.innerWidth;
+  zoomableCanvas.canvas.height = window.innerHeight;
+  zoomableCanvas.onResize();
   redraw();
 }
 
