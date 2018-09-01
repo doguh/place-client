@@ -32,53 +32,14 @@ class ZoomableCanvas {
     var dragStart, dragged;
 
     /**
-     * on mouse down / touch start
-     */
-    canvas.addEventListener(
-      "mousedown",
-      evt => {
-        document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
-          "none";
-        lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
-        lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
-        dragStart = this.context.transformedPoint(lastX, lastY);
-        dragged = false;
-      },
-      false
-    );
-    canvas.addEventListener(
-      "touchstart",
-      evt => {
-        document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
-          "none";
-        lastX =
-          evt.touches[0].offsetX || evt.touches[0].pageX - canvas.offsetLeft;
-        lastY =
-          evt.touches[0].offsetY || evt.touches[0].pageY - canvas.offsetTop;
-        dragStart = this.context.transformedPoint(lastX, lastY);
-        dragged = false;
-      },
-      false
-    );
-
-    /**
-     * on mouse up / touch end
+     * on mouse up
      */
     const touchEnd = evt => {
       dragStart = null;
       if (!dragged && this._onClick) this._onClick(evt);
-    };
-    var scaleFactor = 1.1;
-    var zoom = clicks => {
-      var pt = this.context.transformedPoint(lastX, lastY);
-      this.context.translate(pt.x, pt.y);
-      var factor = Math.pow(scaleFactor, clicks);
-      this.context.scale(factor, factor);
-      this.context.translate(-pt.x, -pt.y);
-      this.redraw();
+      dragged = false;
     };
     canvas.addEventListener("mouseup", touchEnd, false);
-    canvas.addEventListener("touchend", touchEnd, false);
 
     /**
      * on mouse wheel
@@ -95,13 +56,34 @@ class ZoomableCanvas {
     canvas.addEventListener("DOMMouseScroll", handleScroll, false);
     canvas.addEventListener("mousewheel", handleScroll, false);
 
+    /**
+     * zoom
+     */
     var currentScale = 1;
+    var scaleFactor = 1.1;
+    var zoom = clicks => {
+      var pt = this.context.transformedPoint(lastX, lastY);
+      this.context.translate(pt.x, pt.y);
+      var factor = Math.pow(scaleFactor, clicks);
+      this.context.scale(factor, factor);
+      this.context.translate(-pt.x, -pt.y);
+      this.redraw();
+    };
+
     const hammertime = new Hammer(canvas);
 
     /**
      * on drag
      */
     hammertime.get("pan").set({ enable: true });
+    hammertime.on("panstart", event => {
+      document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
+        "none";
+      lastX = event.center.x - canvas.offsetLeft;
+      lastY = event.center.y - canvas.offsetTop;
+      dragStart = this.context.transformedPoint(lastX, lastY);
+      dragged = false;
+    });
     hammertime.on("pan", event => {
       lastX = event.center.x - canvas.offsetLeft;
       lastY = event.center.y - canvas.offsetTop;
