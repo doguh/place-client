@@ -6,6 +6,7 @@ let image;
 let zoomableCanvas;
 
 let COLORS, WIDTH, HEIGHT;
+let selectedColor = 1;
 
 async function init(parentElement) {
   const canvasData = await Api.getCanvasData();
@@ -62,7 +63,16 @@ function createUI() {
     const colorButton = document.createElement("div");
     colorButton.className = "color-button";
     colorButton.style.backgroundColor = color;
-    if (index === 1) {
+    colorButton.addEventListener("click", () => {
+      const list = ui.getElementsByClassName("color-button");
+      for (let i = 0; i < list.length; i++) {
+        const elem = list[i];
+        elem.classList.remove("selected");
+      }
+      colorButton.classList.add("selected");
+      selectedColor = index;
+    });
+    if (index === selectedColor) {
       colorButton.classList.add("selected");
     }
     ui.appendChild(colorButton);
@@ -74,7 +84,7 @@ function onClickCanvas(event) {
   const pos = getMousePos(zoomableCanvas.canvas, event);
   const pt = zoomableCanvas.context.transformedPoint(pos.x, pos.y);
   if (pt.x >= 0 && pt.y >= 0 && pt.x <= WIDTH && pt.y <= HEIGHT) {
-    Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), 1);
+    Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), selectedColor);
   }
 }
 
