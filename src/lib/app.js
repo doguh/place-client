@@ -23,6 +23,8 @@ async function init(parentElement) {
   Api.subscribe(updatePixel);
   redraw();
 
+  selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
+
   const ui = createUI();
   parentElement.appendChild(ui);
 }
@@ -71,6 +73,7 @@ function createUI() {
       }
       colorButton.classList.add("selected");
       selectedColor = index;
+      window.localStorage.setItem("lastcolor", selectedColor);
     });
     if (index === selectedColor) {
       colorButton.classList.add("selected");
