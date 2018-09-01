@@ -149,6 +149,9 @@ class ZoomableCanvas {
     this._onClick = callback;
   }
 
+  /**
+   * aligns the image in the center of the canvas
+   */
   alignImage() {
     var zeroPoint = this.context.transformedPoint(0, 0);
     var farPoint = this.context.transformedPoint(
