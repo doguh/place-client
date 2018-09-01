@@ -55,7 +55,9 @@ function createImage(data) {
 function onClickCanvas(event) {
   const pos = getMousePos(zoomableCanvas.canvas, event);
   const pt = zoomableCanvas.context.transformedPoint(pos.x, pos.y);
-  Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), 1);
+  if (pt.x >= 0 && pt.y >= 0 && pt.x <= WIDTH && pt.y <= HEIGHT) {
+    Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), 1);
+  }
 }
 
 function redraw() {
