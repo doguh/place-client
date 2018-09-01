@@ -21,6 +21,9 @@ async function init(parentElement) {
   zoomableCanvas.onClick(onClickCanvas);
   Api.subscribe(updatePixel);
   redraw();
+
+  const ui = createUI();
+  parentElement.appendChild(ui);
 }
 
 function createCanvasElement() {
@@ -50,6 +53,21 @@ function createImage(data) {
     context.fillRect(x, y, 1, 1);
   }
   return context;
+}
+
+function createUI() {
+  const ui = document.createElement("div");
+  ui.id = "ui";
+  COLORS.map((color, index) => {
+    const colorButton = document.createElement("div");
+    colorButton.className = "color-button";
+    colorButton.style.backgroundColor = color;
+    if (index === 1) {
+      colorButton.classList.add("selected");
+    }
+    ui.appendChild(colorButton);
+  });
+  return ui;
 }
 
 function onClickCanvas(event) {
