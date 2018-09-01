@@ -46,6 +46,8 @@ class ZoomableCanvas {
      * on mouse wheel
      */
     var handleScroll = evt => {
+      lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
+      lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
       var delta = evt.wheelDelta
         ? evt.wheelDelta / 40
         : evt.detail
