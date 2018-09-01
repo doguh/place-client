@@ -5,111 +5,109 @@
  * @param {HTMLCanvasElement} canvas canvas element
  * @param {CanvasImageSource} image CanvasImageSource instance that will be drawn into the canvas with drawImage
  */
-function ZoomableCanvas(canvas, image) {
-  var _self = this;
-  var ctx = canvas.getContext("2d");
+class ZoomableCanvas {
+  constructor(canvas, image) {
+    /**
+     * canvas element
+     */
+    this.canvas = canvas;
+    /**
+     * canvas 2d context
+     */
+    this.context = canvas.getContext("2d");
+    /**
+     * the image drawn in the canvas
+     */
+    this.image = image;
 
-  function redraw() {
-    // Clear the entire canvas
-    var p1 = ctx.transformedPoint(0, 0);
-    var p2 = ctx.transformedPoint(canvas.width, canvas.height);
-    ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-
-    // Alternatively:
-    // ctx.save();
-    // ctx.setTransform(1,0,0,1,0,0);
-    // ctx.clearRect(0,0,canvas.width,canvas.height);
-    // ctx.restore();
-
-    ctx.drawImage(image, 0, 0);
+    trackTransforms(this.context);
+    this.redraw();
+    var lastX = canvas.width / 2,
+      lastY = canvas.height / 2;
+    var dragStart, dragged;
+    canvas.addEventListener(
+      "mousedown",
+      evt => {
+        document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
+          "none";
+        lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
+        lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
+        dragStart = this.context.transformedPoint(lastX, lastY);
+        dragged = false;
+      },
+      false
+    );
+    canvas.addEventListener(
+      "mousemove",
+      evt => {
+        lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
+        lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
+        dragged = true;
+        if (dragStart) {
+          var pt = this.context.transformedPoint(lastX, lastY);
+          this.context.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+          this.redraw();
+        }
+      },
+      false
+    );
+    canvas.addEventListener(
+      "mouseup",
+      evt => {
+        dragStart = null;
+        if (!dragged && this._onClick) this._onClick(evt);
+      },
+      false
+    );
+    var scaleFactor = 1.1;
+    var zoom = clicks => {
+      var pt = this.context.transformedPoint(lastX, lastY);
+      this.context.translate(pt.x, pt.y);
+      var factor = Math.pow(scaleFactor, clicks);
+      this.context.scale(factor, factor);
+      this.context.translate(-pt.x, -pt.y);
+      this.redraw();
+    };
+    var handleScroll = evt => {
+      var delta = evt.wheelDelta
+        ? evt.wheelDelta / 40
+        : evt.detail
+          ? -evt.detail
+          : 0;
+      if (delta) zoom(delta);
+      return evt.preventDefault() && false;
+    };
+    canvas.addEventListener("DOMMouseScroll", handleScroll, false);
+    canvas.addEventListener("mousewheel", handleScroll, false);
   }
 
-  trackTransforms(ctx);
-  redraw();
-
-  var lastX = canvas.width / 2,
-    lastY = canvas.height / 2;
-  var dragStart, dragged;
-  canvas.addEventListener(
-    "mousedown",
-    function(evt) {
-      document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
-        "none";
-      lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
-      lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
-      dragStart = ctx.transformedPoint(lastX, lastY);
-      dragged = false;
-    },
-    false
-  );
-  canvas.addEventListener(
-    "mousemove",
-    function(evt) {
-      lastX = evt.offsetX || evt.pageX - canvas.offsetLeft;
-      lastY = evt.offsetY || evt.pageY - canvas.offsetTop;
-      dragged = true;
-      if (dragStart) {
-        var pt = ctx.transformedPoint(lastX, lastY);
-        ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
-        redraw();
-      }
-    },
-    false
-  );
-  canvas.addEventListener(
-    "mouseup",
-    function(evt) {
-      dragStart = null;
-      if (!dragged && _self._onClick) _self._onClick(evt);
-    },
-    false
-  );
-
-  var scaleFactor = 1.1;
-  var zoom = function(clicks) {
-    var pt = ctx.transformedPoint(lastX, lastY);
-    ctx.translate(pt.x, pt.y);
-    var factor = Math.pow(scaleFactor, clicks);
-    ctx.scale(factor, factor);
-    ctx.translate(-pt.x, -pt.y);
-    redraw();
-  };
-
-  var handleScroll = function(evt) {
-    var delta = evt.wheelDelta
-      ? evt.wheelDelta / 40
-      : evt.detail
-        ? -evt.detail
-        : 0;
-    if (delta) zoom(delta);
-    return evt.preventDefault() && false;
-  };
-  canvas.addEventListener("DOMMouseScroll", handleScroll, false);
-  canvas.addEventListener("mousewheel", handleScroll, false);
-
-  /**
-   * canvas element
-   */
-  this.canvas = canvas;
-  /**
-   * canvas 2d context
-   */
-  this.context = ctx;
   /**
    * function that needs to be called when we want to redraw the canvas
    */
-  this.redraw = redraw;
+  redraw() {
+    var p1 = this.context.transformedPoint(0, 0);
+    var p2 = this.context.transformedPoint(
+      this.canvas.width,
+      this.canvas.height
+    );
+    this.context.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    this.context.drawImage(this.image, 0, 0);
+  }
+
   /**
    * function that needs to be called when the canvas is resized
    */
-  this.onResize = () => {
-    trackTransforms(ctx);
-  };
+  onResize() {
+    trackTransforms(this.context);
+  }
+
   /**
    * registers a callback function that will be called when the canvas is clicked
    * @param {function} callback the function
    */
-  this.onClick = callback => (this._onClick = callback);
+  onClick(callback) {
+    this._onClick = callback;
+  }
 }
 
 function trackTransforms(ctx) {
