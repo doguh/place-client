@@ -69,6 +69,7 @@ function redraw() {
 function onResize(event) {
   canvasElement.width = window.innerWidth;
   canvasElement.height = window.innerHeight;
+  zoomableCanvas.trackTransforms(ctx);
   redraw();
 }
 

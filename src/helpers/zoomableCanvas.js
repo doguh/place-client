@@ -146,4 +146,6 @@ function trackTransforms(ctx) {
   };
 }
 
+makeZoomable.trackTransforms = trackTransforms;
+
 module.exports = makeZoomable;
