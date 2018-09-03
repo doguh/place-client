@@ -8,6 +8,9 @@ let zoomableCanvas;
 let COLORS, WIDTH, HEIGHT;
 let selectedColor = 1;
 
+let refreshing = false;
+let pendingEvents;
+
 async function init(parentElement) {
   const canvasData = await Api.getCanvasData();
   COLORS = canvasData.colors;
@@ -20,7 +23,7 @@ async function init(parentElement) {
   parentElement.appendChild(zoomableCanvas.canvas);
   window.addEventListener("resize", onResize);
   zoomableCanvas.onClick(onClickCanvas);
-  Api.subscribe(updatePixel);
+  Api.subscribe(updatePixel, refresh);
   redraw();
 
   selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
@@ -104,9 +107,38 @@ function onResize(event) {
 }
 
 function updatePixel({ x, y, color }) {
-  image.fillStyle = COLORS[color];
-  image.fillRect(x, y, 1, 1);
-  redraw();
+  if (refreshing) {
+    pendingEvents.push({ x, y, color });
+  } else {
+    image.fillStyle = COLORS[color];
+    image.fillRect(x, y, 1, 1);
+    redraw();
+  }
+}
+
+async function refresh() {
+  if (!refreshing) {
+    refreshing = true;
+    pendingEvents = [];
+
+    const canvasData = await Api.getCanvasData();
+    COLORS = canvasData.colors;
+    HEIGHT = canvasData.height;
+    WIDTH = canvasData.width;
+
+    const d = Buffer.from(canvasData.data, "base64");
+    for (let i = 0; i < d.length; i++) {
+      const color = d[i];
+      const x = i % WIDTH;
+      const y = Math.floor(i / HEIGHT);
+      image.fillStyle = COLORS[color];
+      image.fillRect(x, y, 1, 1);
+    }
+
+    pendingEvents.map(updatePixel);
+    refreshing = false;
+    pendingEvents = null;
+  }
 }
 
 module.exports = init;
