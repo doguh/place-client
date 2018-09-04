@@ -25,7 +25,6 @@ class ZoomableCanvas {
     this.image = image;
 
     trackTransforms(this.context);
-    this.alignImage();
     this.redraw();
 
     var lastX = canvas.width / 2,
@@ -140,7 +139,6 @@ class ZoomableCanvas {
    */
   onResize() {
     trackTransforms(this.context);
-    this.alignImage();
   }
 
   /**
@@ -153,12 +151,13 @@ class ZoomableCanvas {
 
   /**
    * aligns the image in the center of the canvas
+   * @param bottomOffset {number} bottom offset in pixel
    */
-  alignImage() {
+  alignImage(bottomOffset = 0) {
     var zeroPoint = this.context.transformedPoint(0, 0);
     var farPoint = this.context.transformedPoint(
       this.canvas.width,
-      this.canvas.height
+      this.canvas.height - bottomOffset
     );
     var dx = zeroPoint.x < 0 ? zeroPoint.x : 0;
     var dy = zeroPoint.y < 0 ? zeroPoint.y : 0;

@@ -4,6 +4,7 @@ const ZoomableCanvas = require("./zoomableCanvas");
 
 let image;
 let zoomableCanvas;
+let uiElement;
 
 let COLORS, WIDTH, HEIGHT;
 let selectedColor = 1;
@@ -21,12 +22,13 @@ async function init(parentElement) {
   window.addEventListener("resize", onResize);
   zoomableCanvas.onClick(onClickCanvas);
   Api.subscribe(updatePixel);
+
+  uiElement = createUI();
+  parentElement.appendChild(uiElement);
+  zoomableCanvas.alignImage(uiElement.clientHeight);
   redraw();
 
   selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
-
-  const ui = createUI();
-  parentElement.appendChild(ui);
 }
 
 function createCanvasElement() {
@@ -100,6 +102,7 @@ function onResize(event) {
   zoomableCanvas.canvas.width = window.innerWidth;
   zoomableCanvas.canvas.height = window.innerHeight;
   zoomableCanvas.onResize();
+  zoomableCanvas.alignImage(uiElement.clientHeight);
   redraw();
 }
 
