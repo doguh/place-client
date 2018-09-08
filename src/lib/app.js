@@ -106,7 +106,7 @@ function onResize(event) {
 }
 
 function updatePixel({ x, y, color }) {
-  image.fillStyle = COLORS[color];
+  image.fillStyle = color;
   image.fillRect(x, y, 1, 1);
   redraw();
 }
