@@ -10,6 +10,9 @@ let uiElement;
 let COLORS, WIDTH, HEIGHT;
 let selectedColor = 1;
 
+let refreshing = false;
+let pendingEvents;
+
 async function init(parentElement) {
   const canvasData = await Api.getCanvasData();
   COLORS = canvasData.colors;
@@ -22,7 +25,7 @@ async function init(parentElement) {
   parentElement.appendChild(zoomableCanvas.canvas);
   window.addEventListener("resize", onResize);
   zoomableCanvas.onClick(onClickCanvas);
-  Api.subscribe(updatePixel);
+  Api.subscribe(updatePixel, refresh);
 
   selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
   uiElement = createUI();
@@ -112,9 +115,38 @@ function onResize(event) {
 }
 
 function updatePixel({ x, y, color }) {
-  image.fillStyle = color;
-  image.fillRect(x, y, 1, 1);
-  redraw();
+  if (refreshing) {
+    pendingEvents.push({ x, y, color });
+  } else {
+    image.fillStyle = color;
+    image.fillRect(x, y, 1, 1);
+    redraw();
+  }
+}
+
+async function refresh() {
+  if (!refreshing) {
+    refreshing = true;
+    pendingEvents = [];
+    const canvasData = await Api.getCanvasData();
+    COLORS = canvasData.colors;
+    HEIGHT = canvasData.height;
+    WIDTH = canvasData.width;
+
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        image.drawImage(img, 0, 0);
+        resolve();
+      };
+      img.src = canvasData.data;
+    });
+    redraw();
+
+    pendingEvents.map(updatePixel);
+    refreshing = false;
+    pendingEvents = null;
+  }
 }
 
 module.exports = init;
