@@ -1,5 +1,6 @@
 const Api = require("./api");
 const getMousePos = require("../helpers/getCanvasMousePosition");
+const rgbToHex = require("../helpers/rgbToHex");
 const ZoomableCanvas = require("./zoomableCanvas");
 
 let image;
@@ -88,7 +89,13 @@ function onClickCanvas(event) {
   const pos = getMousePos(zoomableCanvas.canvas, event);
   const pt = zoomableCanvas.context.transformedPoint(pos.x, pos.y);
   if (pt.x >= 0 && pt.y >= 0 && pt.x <= WIDTH && pt.y <= HEIGHT) {
-    Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), selectedColor);
+    // get current pixel color
+    const pix = image.getImageData(pt.x, pt.y, 1, 1).data;
+    const hex = "#" + ("000000" + rgbToHex(pix[0], pix[1], pix[2])).slice(-6);
+    // if new color != existing pixel color, send update
+    if (hex !== COLORS[selectedColor]) {
+      Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), selectedColor);
+    }
   }
 }
 
