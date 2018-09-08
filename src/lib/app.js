@@ -24,12 +24,11 @@ async function init(parentElement) {
   zoomableCanvas.onClick(onClickCanvas);
   Api.subscribe(updatePixel);
 
+  selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
   uiElement = createUI();
   parentElement.appendChild(uiElement);
   zoomableCanvas.alignImage(uiElement.clientHeight);
   redraw();
-
-  selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
 }
 
 function createCanvasElement() {
