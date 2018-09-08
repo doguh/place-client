@@ -1,5 +1,6 @@
 const Api = require("./api");
 const getMousePos = require("../helpers/getCanvasMousePosition");
+const rgbToHex = require("../helpers/rgbToHex");
 const ZoomableCanvas = require("./zoomableCanvas");
 
 let image;
@@ -9,26 +10,28 @@ let uiElement;
 let COLORS, WIDTH, HEIGHT;
 let selectedColor = 1;
 
+let refreshing = false;
+let pendingEvents;
+
 async function init(parentElement) {
   const canvasData = await Api.getCanvasData();
   COLORS = canvasData.colors;
   HEIGHT = canvasData.height;
   WIDTH = canvasData.width;
 
-  image = createImage(canvasData.data);
+  image = await createImage(canvasData.data);
 
   zoomableCanvas = createCanvasElement();
   parentElement.appendChild(zoomableCanvas.canvas);
   window.addEventListener("resize", onResize);
   zoomableCanvas.onClick(onClickCanvas);
-  Api.subscribe(updatePixel);
+  Api.subscribe(updatePixel, refresh);
 
+  selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
   uiElement = createUI();
   parentElement.appendChild(uiElement);
   zoomableCanvas.alignImage(uiElement.clientHeight);
   redraw();
-
-  selectedColor = parseInt(window.localStorage.getItem("lastcolor") || 1, 10);
 }
 
 function createCanvasElement() {
@@ -45,19 +48,18 @@ function createCanvasElement() {
 }
 
 function createImage(data) {
-  const el = document.createElement("canvas");
-  el.width = WIDTH;
-  el.height = HEIGHT;
-  const context = el.getContext("2d");
-  const d = Buffer.from(data, "base64");
-  for (let i = 0; i < d.length; i++) {
-    const color = d[i];
-    const x = i % WIDTH;
-    const y = Math.floor(i / HEIGHT);
-    context.fillStyle = COLORS[color];
-    context.fillRect(x, y, 1, 1);
-  }
-  return context;
+  return new Promise((resolve, reject) => {
+    const el = document.createElement("canvas");
+    el.width = WIDTH;
+    el.height = HEIGHT;
+    const context = el.getContext("2d");
+    const image = new Image();
+    image.onload = () => {
+      context.drawImage(image, 0, 0);
+      resolve(context);
+    };
+    image.src = data;
+  });
 }
 
 function createUI() {
@@ -89,7 +91,13 @@ function onClickCanvas(event) {
   const pos = getMousePos(zoomableCanvas.canvas, event);
   const pt = zoomableCanvas.context.transformedPoint(pos.x, pos.y);
   if (pt.x >= 0 && pt.y >= 0 && pt.x <= WIDTH && pt.y <= HEIGHT) {
-    Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), selectedColor);
+    // get current pixel color
+    const pix = image.getImageData(pt.x, pt.y, 1, 1).data;
+    const hex = "#" + ("000000" + rgbToHex(pix[0], pix[1], pix[2])).slice(-6);
+    // if new color != existing pixel color, send update
+    if (hex !== COLORS[selectedColor]) {
+      Api.setPixel(Math.floor(pt.x), Math.floor(pt.y), selectedColor);
+    }
   }
 }
 
@@ -107,9 +115,38 @@ function onResize(event) {
 }
 
 function updatePixel({ x, y, color }) {
-  image.fillStyle = COLORS[color];
-  image.fillRect(x, y, 1, 1);
-  redraw();
+  if (refreshing) {
+    pendingEvents.push({ x, y, color });
+  } else {
+    image.fillStyle = color;
+    image.fillRect(x, y, 1, 1);
+    redraw();
+  }
+}
+
+async function refresh() {
+  if (!refreshing) {
+    refreshing = true;
+    pendingEvents = [];
+    const canvasData = await Api.getCanvasData();
+    COLORS = canvasData.colors;
+    HEIGHT = canvasData.height;
+    WIDTH = canvasData.width;
+
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        image.drawImage(img, 0, 0);
+        resolve();
+      };
+      img.src = canvasData.data;
+    });
+    redraw();
+
+    pendingEvents.map(updatePixel);
+    refreshing = false;
+    pendingEvents = null;
+  }
 }
 
 module.exports = init;
