@@ -15,7 +15,7 @@ async function init(parentElement) {
   HEIGHT = canvasData.height;
   WIDTH = canvasData.width;
 
-  image = createImage(canvasData.data);
+  image = await createImage(canvasData.data);
 
   zoomableCanvas = createCanvasElement();
   parentElement.appendChild(zoomableCanvas.canvas);
@@ -45,19 +45,18 @@ function createCanvasElement() {
 }
 
 function createImage(data) {
-  const el = document.createElement("canvas");
-  el.width = WIDTH;
-  el.height = HEIGHT;
-  const context = el.getContext("2d");
-  const d = Buffer.from(data, "base64");
-  for (let i = 0; i < d.length; i++) {
-    const color = d[i];
-    const x = i % WIDTH;
-    const y = Math.floor(i / HEIGHT);
-    context.fillStyle = COLORS[color];
-    context.fillRect(x, y, 1, 1);
-  }
-  return context;
+  return new Promise((resolve, reject) => {
+    const el = document.createElement("canvas");
+    el.width = WIDTH;
+    el.height = HEIGHT;
+    const context = el.getContext("2d");
+    const image = new Image();
+    image.onload = () => {
+      context.drawImage(image, 0, 0);
+      resolve(context);
+    };
+    image.src = data;
+  });
 }
 
 function createUI() {
