@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server --watch --open",
-    "build": "./node_modules/.bin/webpack",
+    "build": "./node_modules/.bin/webpack -p",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,8 +20,11 @@
   },
   "homepage": "https://github.com/doguh/place-client#readme",
   "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "babel-loader": "^8.0.5",
     "copy-webpack-plugin": "^4.5.2",
-    "webpack": "^4.17.1",
+    "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^3.1.7"
   },
